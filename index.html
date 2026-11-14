@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="sw"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NJIA – Mwongozo wa Mtaa</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+:root{--bg:#F1F6F4;--card:#fff;--ink:#12211F;--mut:#5B6E6A;--sea:#0E3B3A;--sun:#F5B700;--line:#D6E2DE;--red:#D62F3A;--hh:58px;--th:60px}
+@media(prefers-color-scheme:dark){:root{--bg:#0B1514;--card:#13211F;--ink:#E8F1EE;--mut:#93A9A4;--sea:#0A2625;--line:#24383A}}
+*{box-sizing:border-box}html,body{margin:0;height:100%}body{background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,sans-serif;overscroll-behavior:none}
+button,input{font:inherit}button{cursor:pointer;border:0;color:inherit}
+header{background:var(--sea);color:#fff;height:var(--hh);padding:0 16px;display:flex;justify-content:space-between;align-items:center;position:fixed;top:0;left:0;right:0;z-index:1100}
+.logo{font-weight:800;font-size:24px;line-height:1}.logo i{color:var(--sun);font-style:normal}.sub{font-size:11.5px;opacity:.8}
+.lang{background:rgba(255,255,255,.15);color:#fff;border-radius:99px;padding:6px 12px;font-weight:700}
+[hidden]{display:none!important}
+#v-nearby{position:fixed;top:var(--hh);left:0;right:0;bottom:calc(var(--th) + env(safe-area-inset-bottom,0px))}
+#map{position:absolute;inset:0;z-index:1;touch-action:none}
+.chips{position:absolute;top:8px;left:0;right:0;z-index:500;display:flex;gap:8px;overflow-x:auto;padding:0 10px;scrollbar-width:none}
+.chip{flex:none;background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 13px;font-weight:600;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.chip.on{background:var(--sun);border-color:var(--sun);color:#12211F}
+.fabs{position:absolute;top:54px;right:10px;z-index:500;display:flex;flex-direction:column;gap:8px}
+.fab{width:46px;height:46px;border-radius:14px;background:var(--card);box-shadow:0 2px 8px rgba(0,0,0,.3);font-size:20px;font-weight:800;display:grid;place-items:center}
+.fab.sun{background:var(--sun);color:#12211F}
+#msg,#rt{position:absolute;left:10px;right:66px;z-index:500;background:var(--card);border-radius:12px;padding:8px 12px;font-size:13px;box-shadow:0 2px 10px rgba(0,0,0,.25);display:none}
+#msg{top:54px}#rt{top:100px;align-items:center;gap:8px}
+#rt button{margin-left:auto;background:var(--line);border-radius:8px;padding:4px 10px;font-weight:700}
+.mk{width:32px;height:32px;border-radius:50%;background:#0E3B3A;border:3px solid #F5B700;display:grid;place-items:center;font-size:15px;box-shadow:0 1px 5px rgba(0,0,0,.4)}
+#panel{position:absolute;left:0;right:0;bottom:0;z-index:600;background:var(--card);border-radius:20px 20px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.25);display:flex;flex-direction:column;transition:height .2s;height:36%}
+#panel.p2{height:78%}#panel.p0{height:50px}
+#grab{flex:none;height:50px;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;width:100%}
+#grab i{display:block;width:40px;height:5px;border-radius:9px;background:var(--line)}#grab span{font-size:12.5px;color:var(--mut);font-weight:600}
+#list{overflow:auto;flex:1;padding-bottom:12px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin:0 12px 8px;display:flex;gap:12px;align-items:center;cursor:pointer}
+.ico{width:42px;height:42px;border-radius:12px;background:var(--bg);display:grid;place-items:center;font-size:21px;flex:none}
+.item b{display:block}.meta,.note{font-size:12.5px;color:var(--mut)}.note{padding:0 16px;margin:6px 0}
+.dist{margin-left:auto;font-weight:800;white-space:nowrap}
+.fresh{display:inline-block;border-radius:99px;font-size:11.5px;padding:1px 8px;font-weight:700;margin:3px 4px 0 0}
+.f-ok{background:#D5F0E2;color:#126B42}.f-warn{background:#FBEBC2;color:#7A5200}.f-none{background:var(--line);color:var(--mut)}.f-bad{background:#F9D6D9;color:#97212A}
+.page{padding:calc(var(--hh) + 6px) 0 calc(var(--th) + 24px);max-width:640px;margin:0 auto}
+h2{font-size:18px;margin:10px 16px 6px}
+.btn{background:var(--sea);color:#fff;border-radius:12px;padding:11px 14px;font-weight:700;text-align:center;text-decoration:none;display:inline-block}
+.btn.sun{background:var(--sun);color:#12211F}.btn.line{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+.tabs{position:fixed;bottom:0;left:0;right:0;height:calc(var(--th) + env(safe-area-inset-bottom,0px));background:var(--card);border-top:1px solid var(--line);display:flex;padding:6px 6px env(safe-area-inset-bottom,0px);z-index:1100}
+.tab{flex:1;background:none;font-size:11.5px;font-weight:600;color:var(--mut);display:flex;flex-direction:column;align-items:center}.tab span{font-size:20px}.tab.on{color:var(--sea);font-weight:800}
+@media(prefers-color-scheme:dark){.tab.on{color:var(--sun)}}
+.sheet{position:fixed;inset:auto 0 0;background:var(--card);border-radius:22px 22px 0 0;box-shadow:0 -10px 40px rgba(0,0,0,.3);padding:18px 16px calc(24px + env(safe-area-inset-bottom,0px));z-index:1300;transform:translateY(110%);transition:transform .25s;max-height:85vh;overflow:auto}
+.sheet.open{transform:none}.scrim{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1200;display:none}.scrim.open{display:block}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.row .btn{flex:1;min-width:90px}
+input{width:calc(100% - 32px);margin:4px 16px 8px;padding:11px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+.sos{background:var(--red);color:#fff;border-radius:18px;padding:18px;margin:10px 16px}
+.sos a{display:block;background:#fff;color:var(--red);font-weight:800;font-size:30px;text-align:center;border-radius:14px;padding:10px;margin-top:10px;text-decoration:none}
+.toast{position:fixed;left:50%;bottom:calc(var(--th) + 40px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:9px 16px;border-radius:99px;font-weight:600;z-index:1400;opacity:0;transition:opacity .2s;pointer-events:none}.toast.on{opacity:1}
+</style></head><body>
+<header><div><div class="logo">NJIA<i>.</i></div><div class="sub" id="tag"></div></div><button class="lang" id="lang">EN</button></header>
+<section id="v-nearby">
+ <div id="map"></div>
+ <div class="chips" id="chips"></div>
+ <div class="fabs"><button class="fab sun" id="gps" aria-label="My location">📍</button><button class="fab" id="area" aria-label="Search this area">🔎</button><button class="fab" id="zi">+</button><button class="fab" id="zo">−</button></div>
+ <div id="msg"></div><div id="rt"></div>
+ <div id="panel"><button id="grab"><i></i><span id="cnt"></span></button><div id="list"></div></div>
+</section>
+<div class="page" id="v-leaders" hidden></div><div class="page" id="v-sos" hidden></div>
+<nav class="tabs" id="tabs"></nav><div class="scrim" id="scrim"></div><div class="sheet" id="sheet"></div><div class="toast" id="toast"></div>
+<script>
+const T={sw:{tag:"Mwongozo wa mtaa, hai kila siku",nearby:"Ramani",leaders:"Viongozi",sos:"Dharura",hospital:"Hospitali",pharmacy:"Dawa",police:"Polisi",food:"Chakula",beach:"Ufukwe",school:"Shule",church:"Ibada",stop:"Vituo vya basi",load:"Inatafuta…",none:"Hakuna matokeo hapa. Sogeza ramani, kisha bonyeza 🔎.",err:"Seva ina shughuli. Jaribu tena baada ya sekunde chache.",gpsfail:"Eneo halipatikani. Ruhusu location kwenye Chrome.",still:"Bado wazi",closed:"Imefungwa",moved:"Imehama",report:"Thibitisha sasa",thanks:"Asante! Imehifadhiwa.",never:"Jamii haijathibitisha",ago:"dak",hr:"saa",day:"siku",call:"Piga simu",dir:"Anza safari (Google Maps)",route:"Onyesha njia",clear:"Futa",drive:"kwa gari",unnamed:"Jina halijaandikwa",ladd:"Ongeza kiongozi",lname:"Jina na cheo",lward:"Mtaa / Kata",lph:"Namba ya simu",save:"Hifadhi",lnote:"Viongozi wanaongezwa na jamii. Thibitisha namba kabla ya kuamini.",lempty:"Hakuna kiongozi bado.",sosd:"Namba ya dharura ya taifa. Piga mara moja.",nearh:"Hospitali za karibu",warn:"Data ya OpenStreetMap. Kama kitu kinakosekana, thibitisha.",places:"mahali",list:"Orodha"},
+en:{tag:"Your street guide, always fresh",nearby:"Map",leaders:"Leaders",sos:"Emergency",hospital:"Hospitals",pharmacy:"Pharmacies",police:"Police",food:"Food",beach:"Beaches",school:"Schools",church:"Worship",stop:"Bus stops",load:"Searching…",none:"No results here. Move the map, then tap 🔎.",err:"Server is busy. Try again in a few seconds.",gpsfail:"Location unavailable. Allow location in Chrome.",still:"Still open",closed:"Closed",moved:"Moved",report:"Confirm now",thanks:"Thanks! Saved.",never:"Not confirmed by community",ago:"min",hr:"h",day:"d",call:"Call",dir:"Start trip (Google Maps)",route:"Show route",clear:"Clear",drive:"by car",unnamed:"Unnamed",ladd:"Add a leader",lname:"Name and title",lward:"Street / Ward",lph:"Phone number",save:"Save",lnote:"Leaders are added by the community. Verify numbers before trusting them.",lempty:"No leaders yet.",sosd:"National emergency number. Call right away.",nearh:"Nearest hospitals",warn:"OpenStreetMap data. If something is missing, confirm it.",places:"places",list:"List"}};
+const CATS={hospital:"🏥",pharmacy:"💊",police:"🚓",food:"🍲",beach:"🏖️",school:"🏫",church:"⛪",stop:"🚌"};
+const SEL={hospital:['["amenity"~"^(hospital|clinic)$"]'],pharmacy:['["amenity"="pharmacy"]'],police:['["amenity"="police"]'],food:['["amenity"~"^(restaurant|cafe|fast_food)$"]'],beach:['["natural"="beach"]'],school:['["amenity"~"^(school|college|university)$"]'],church:['["amenity"="place_of_worship"]'],stop:['["highway"="bus_stop"]','["amenity"="bus_station"]']};
+const SERVERS=["https://overpass-api.de/api/interpreter","https://overpass.private.coffee/api/interpreter","https://overpass.kumi.systems/api/interpreter","https://maps.mail.ru/osm/tools/overpass/api/interpreter"];
+const $=s=>document.querySelector(s);
+const st=(k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){}};
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let lang="sw",tab="nearby",cat="hospital",places=[],cache={},me=null,sel=null,reqId=0,pan=1,routeL=null,meMk=null;
+let rep={},ld=[];try{rep=JSON.parse(st("njia_rep")||"{}");ld=JSON.parse(st("njia_ld")||"[]")}catch(e){}
+const t=k=>T[lang][k];
+const map=L.map("map",{zoomControl:false,tap:true}).setView([-6.7924,39.2083],14);
+L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap"}).addTo(map);
+const layer=L.layerGroup().addTo(map);
+function dist(a,b){const R=6371,r=Math.PI/180,dl=(b.lat-a.lat)*r,dg=(b.lng-a.lng)*r,x=Math.sin(dl/2)**2+Math.cos(a.lat*r)*Math.cos(b.lat*r)*Math.sin(dg/2)**2;return 2*R*Math.asin(Math.sqrt(x))}
+const fd=d=>d<1?Math.round(d*100)*10+" m":d.toFixed(1)+" km";
+function fresh(id){const r=rep[id];if(!r)return["f-none",t("never")];const m=(Date.now()-r.t)/6e4;const s=m<60?Math.max(1,Math.round(m))+" "+t("ago"):m<1440?Math.round(m/60)+" "+t("hr"):Math.round(m/1440)+" "+t("day");return[r.s!=="open"?"f-bad":m<1440?"f-ok":"f-warn",{open:t("still"),closed:t("closed"),moved:t("moved")}[r.s]+" · "+s]}
+function msg(s){const m=$("#msg");m.style.display=s?"block":"none";m.textContent=s||""}
+function toast(s){const e=$("#toast");e.textContent=s;e.classList.add("on");setTimeout(()=>e.classList.remove("on"),1800)}
+const ref=()=>me||map.getCenter();
+async function overpass(q){let err;for(let k=0;k<2;k++){for(const s of SERVERS){try{const c=new AbortController(),to=setTimeout(()=>c.abort(),12000);const r=await fetch(s,{method:"POST",body:"data="+encodeURIComponent(q),signal:c.signal,headers:{"Content-Type":"application/x-www-form-urlencoded"}});clearTimeout(to);if(!r.ok)throw new Error(r.status);return await r.json()}catch(e){err=e}}await new Promise(r=>setTimeout(r,1200))}throw err}
+async function search(){
+ const my=++reqId,c=map.getCenter(),ck=cat+c.lat.toFixed(2)+c.lng.toFixed(2);msg(t("load"));
+ try{
+  if(!cache[ck]){
+   const q=`[out:json][timeout:15];(${SEL[cat].map(x=>`nwr${x}(around:3000,${c.lat},${c.lng});`).join("")});out center 60;`;
+   const j=await overpass(q);
+   cache[ck]=j.elements.map(e=>{const g=e.tags||{},la=e.lat!=null?e.lat:e.center&&e.center.lat,ln=e.lon!=null?e.lon:e.center&&e.center.lon;return la==null?null:{id:e.type[0]+e.id,name:g.name||g["name:sw"]||g["name:en"]||"",lat:la,lng:ln,ph:g.phone||g["contact:phone"]||"",addr:g["addr:street"]||g["addr:suburb"]||"",cat}}).filter(Boolean)}
+  if(my!==reqId)return;
+  places=cache[ck];draw();msg(places.length?"":t("none"));
+ }catch(e){if(my===reqId)msg(t("err"))}}
+const nm=p=>p.name||t(p.cat)+" ("+t("unnamed")+")";
+function draw(){
+ layer.clearLayers();const r=ref();
+ places.forEach(p=>p.d=dist({lat:r.lat,lng:r.lng},p));places.sort((a,b)=>a.d-b.d);
+ places.forEach(p=>L.marker([p.lat,p.lng],{icon:L.divIcon({html:`<div class="mk">${CATS[p.cat]}</div>`,className:"",iconSize:[32,32],iconAnchor:[16,16]})}).on("click",()=>openSheet(p.id)).addTo(layer));
+ if(meMk)map.removeLayer(meMk);if(me)meMk=L.circleMarker([me.lat,me.lng],{radius:9,color:"#fff",weight:3,fillColor:"#2F7CF6",fillOpacity:1}).addTo(map);
+ renderList()}
+function renderChips(){$("#chips").innerHTML=Object.keys(CATS).map(c=>`<button class="chip ${cat===c?"on":""}" data-cat="${c}">${CATS[c]} ${t(c)}</button>`).join("")}
+function itemHTML(p){const[c,l]=fresh(p.id);return `<div class="item" data-id="${p.id}"><div class="ico">${CATS[p.cat]}</div><div><b>${esc(nm(p))}</b><span class="fresh ${c}">${l}</span></div><div class="dist">${fd(p.d)}</div></div>`}
+function renderList(){$("#cnt").textContent=places.length+" "+t("places")+" · "+t("list");$("#list").innerHTML=places.map(itemHTML).join("")+(places.length?`<p class="note">${t("warn")}</p>`:"")}
+function renderLeaders(){$("#v-leaders").innerHTML=`<h2>${t("leaders")}</h2><p class="note">${t("lnote")}</p>`+(ld.length?ld.map(x=>`<div class="item" style="cursor:default"><div class="ico">👤</div><div><b>${esc(x.n)}</b><span class="meta">${esc(x.w)}</span></div>${x.p?`<a class="btn sun dist" href="tel:${esc(x.p)}">${t("call")}</a>`:""}</div>`).join(""):`<p class="note">${t("lempty")}</p>`)+`<h2>${t("ladd")}</h2><input id="ln" placeholder="${t("lname")}"><input id="lw" placeholder="${t("lward")}"><input id="lp" type="tel" placeholder="${t("lph")}"><div style="margin:0 16px"><button class="btn" style="width:100%" id="lsave">${t("save")}</button></div>`}
+function renderSos(){$("#v-sos").innerHTML=`<div class="sos"><b style="font-size:20px">${t("sos")}</b><div>${t("sosd")}</div><a href="tel:112">112</a></div><div style="margin:0 16px"><button class="btn line" style="width:100%" data-go="hospital">🏥 ${t("nearh")}</button></div>`}
+function tabs(){const a=[["nearby","🗺️"],["leaders","👥"],["sos","🆘"]];$("#tabs").innerHTML=a.map(x=>`<button class="tab ${tab===x[0]?"on":""}" data-tab="${x[0]}"><span>${x[1]}</span>${t(x[0])}</button>`).join("");["nearby","leaders","sos"].forEach(v=>$("#v-"+v).hidden=v!==tab);if(tab==="nearby")setTimeout(()=>map.invalidateSize(),50)}
+function renderAll(){document.documentElement.lang=lang;$("#tag").textContent=t("tag");$("#lang").textContent=lang==="sw"?"EN":"SW";renderChips();renderLeaders();renderSos();tabs();renderList()}
+function openSheet(id){const p=places.find(x=>x.id===id);if(!p)return;sel=p;const[c,l]=fresh(p.id);
+ $("#sheet").innerHTML=`<div style="display:flex;gap:12px;align-items:center"><div class="ico">${CATS[p.cat]}</div><div><b style="font-size:18px">${esc(nm(p))}</b><div class="meta">${esc(p.addr)} ${p.addr?"· ":""}${fd(p.d)}</div></div></div><p><span class="fresh ${c}">${l}</span></p><div class="row"><button class="btn sun" data-route="${p.id}">🧭 ${t("route")}</button><a class="btn line" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lng}">🚗 ${t("dir")}</a>${p.ph?`<a class="btn line" href="tel:${esc(p.ph)}">📞 ${t("call")}</a>`:""}</div><b>${t("report")}</b><div class="row"><button class="btn" data-r="open">✅ ${t("still")}</button><button class="btn line" data-r="closed">⛔ ${t("closed")}</button><button class="btn line" data-r="moved">📍 ${t("moved")}</button></div>`;tg(true)}
+function tg(o){$("#sheet").classList.toggle("open",o);$("#scrim").classList.toggle("open",o)}
+function clearRoute(){if(routeL)map.removeLayer(routeL);routeL=null;$("#rt").style.display="none"}
+async function route(p){
+ if(!me){locate(false,()=>route(p));return}
+ tg(false);msg(t("load"));
+ try{const r=await fetch(`https://router.project-osrm.org/route/v1/driving/${me.lng},${me.lat};${p.lng},${p.lat}?overview=full&geometries=geojson`);const j=await r.json();const rt=j.routes&&j.routes[0];if(!rt)throw 0;
+  clearRoute();routeL=L.geoJSON(rt.geometry,{style:{color:"#2F7CF6",weight:6,opacity:.9}}).addTo(map);map.fitBounds(routeL.getBounds(),{padding:[50,50]});
+  const el=$("#rt");el.style.display="flex";el.innerHTML=`<span>🧭 <b>${esc(nm(p))}</b><br>${(rt.distance/1000).toFixed(1)} km · ~${Math.max(1,Math.round(rt.duration/60))} ${t("ago")} ${t("drive")}</span><button id="rtx">${t("clear")}</button>`;
+  pan=0;setPanel();msg("")}catch(e){msg(t("err"))}}
+function locate(quiet,cb){if(!navigator.geolocation){if(!quiet)toast(t("gpsfail"));return}navigator.geolocation.getCurrentPosition(p=>{me={lat:p.coords.latitude,lng:p.coords.longitude};if(cb)cb();else{map.setView([me.lat,me.lng],16);search()}},()=>{if(!quiet)toast(t("gpsfail"))},{timeout:10000,enableHighAccuracy:true})}
+function setPanel(){const e=$("#panel");e.className=["p0","","p2"].map((c,i)=>i===pan?c:"").join("");e.classList.toggle("p0",pan===0);e.classList.toggle("p2",pan===2)}
+document.addEventListener("click",e=>{const g=s=>e.target.closest(s);
+ if(g("#lang")){lang=lang==="sw"?"en":"sw";renderAll();msg("")}
+ else if(g("[data-tab]")){tab=g("[data-tab]").dataset.tab;tabs();scrollTo(0,0)}
+ else if(g("[data-go]")){cat=g("[data-go]").dataset.go;tab="nearby";renderChips();tabs();search()}
+ else if(g("[data-cat]")){cat=g("[data-cat]").dataset.cat;renderChips();search()}
+ else if(g("#area"))search();
+ else if(g("#gps"))locate(false);
+ else if(g("#zi"))map.zoomIn();else if(g("#zo"))map.zoomOut();
+ else if(g("#grab")){pan=(pan+1)%3;setPanel()}
+ else if(g("#rtx"))clearRoute();
+ else if(g("[data-route]"))route(sel);
+ else if(g("[data-r]")&&sel){rep[sel.id]={s:g("[data-r]").dataset.r,t:Date.now()};st("njia_rep",JSON.stringify(rep));tg(false);toast(t("thanks"));renderList()}
+ else if(g("#lsave")){const n=$("#ln").value.trim();if(!n)return;ld.push({n,w:$("#lw").value.trim(),p:$("#lp").value.trim()});st("njia_ld",JSON.stringify(ld));renderLeaders();toast(t("thanks"))}
+ else if(g(".item[data-id]")){const p=places.find(x=>x.id===g(".item[data-id]").dataset.id);if(p&&g("#panel")){map.setView([p.lat,p.lng],17)}openSheet(g(".item[data-id]").dataset.id)}
+ else if(g("#scrim"))tg(false)});
+renderAll();setPanel();search();locate(true);
+</script></body></html>
